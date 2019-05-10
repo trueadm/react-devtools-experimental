@@ -32,6 +32,7 @@ export type CommitDetailsFrontend = {|
   commitIndex: number,
   actualDurations: Map<number, number>,
   interactions: Array<InteractionFrontend>,
+  schedulers: Set<number>,
 |};
 
 export type FiberCommitsFrontend = {|

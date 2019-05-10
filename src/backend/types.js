@@ -125,6 +125,7 @@ export type CommitDetailsBackend = {|
   actualDurations: Array<number>,
   commitIndex: number,
   interactions: Array<InteractionBackend>,
+  schedulers: Array<number>,
   rootID: number,
 |};
 

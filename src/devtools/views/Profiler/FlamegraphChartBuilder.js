@@ -65,8 +65,9 @@ export function getChartData({
 
     const name = displayName || 'Unknown';
     const maybeKey = key !== null ? ` key="${key}"` : '';
+    const maybeScheduler = commitDetails.schedulers.has(id) ? '*' : '';
 
-    let label = `${name}${maybeKey}`;
+    let label = `${maybeScheduler}${name}${maybeKey}`;
     if (didRender) {
       label += ` (${formatDuration(selfDuration)}ms of ${formatDuration(
         actualDuration

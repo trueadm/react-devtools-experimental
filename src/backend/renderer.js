@@ -1275,6 +1275,9 @@ export function attach(
                 timestamp: interaction.timestamp - profilingStartTime,
               })
             ),
+            schedulers: Array.from(root.memoizedSchedulers).map(
+              (fiber: Fiber) => getFiberID(fiber) // TODO (schedulers) What if this gets unmounted?
+            ),
             maxActualDuration: 0,
           };
         }
@@ -1316,6 +1319,9 @@ export function attach(
             ...interaction,
             timestamp: interaction.timestamp - profilingStartTime,
           })
+        ),
+        schedulers: Array.from(root.memoizedSchedulers).map(
+          (fiber: Fiber) => getFiberID(fiber) // TODO (schedulers) What if this gets unmounted?
         ),
         maxActualDuration: 0,
       };
@@ -1963,6 +1969,7 @@ export function attach(
     actualDurations: Array<number>,
     commitTime: number,
     interactions: Array<InteractionBackend>,
+    schedulers: Array<number>,
     maxActualDuration: number,
   |};
 
@@ -1989,6 +1996,7 @@ export function attach(
           commitIndex,
           interactions: commitProfilingData.interactions,
           actualDurations: commitProfilingData.actualDurations,
+          schedulers: commitProfilingData.schedulers,
           rootID,
         };
       }
@@ -2002,6 +2010,7 @@ export function attach(
       commitIndex,
       interactions: [],
       actualDurations: [],
+      schedulers: [],
       rootID,
     };
   }
