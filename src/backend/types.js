@@ -129,12 +129,13 @@ export type ChangeDescription = {|
 |};
 
 export type CommitDetailsBackend = {|
-  actualDurations: Array<number>,
   changeDescriptions: Array<[number, ChangeDescription]>,
   commitIndex: number,
+  // Tuple of id, actual duration, and (computed) self duration
+  durations: Array<number>,
   interactions: Array<InteractionBackend>,
-  schedulers: Array<number> | null,
   rootID: number,
+  schedulers: Array<number> | null,
 |};
 
 export type FiberCommitsBackend = {|

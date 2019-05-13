@@ -867,13 +867,8 @@ export function attach(
     const isRoot = fiber.tag === HostRoot;
     const id = getFiberID(getPrimaryFiber(fiber));
 
-    const isProfilingSupported = fiber.hasOwnProperty('treeBaseDuration');
-    if (isProfilingSupported) {
-      idToRootMap.set(id, currentRootID);
-      idToTreeBaseDurationMap.set(id, fiber.treeBaseDuration || 0);
-    }
-
     const hasOwnerMetadata = fiber.hasOwnProperty('_debugOwner');
+    const isProfilingSupported = fiber.hasOwnProperty('treeBaseDuration');
 
     if (isRoot) {
       pushOperation(TREE_OPERATION_ADD);
@@ -904,26 +899,10 @@ export function attach(
       pushOperation(keyStringID);
     }
 
-    if (isProfiling) {
-      // Tree base duration updates are included in the operations typed array.
-      // So we have to convert them from milliseconds to microseconds so we can send them as ints.
-      const treeBaseDuration = Math.floor((fiber.treeBaseDuration || 0) * 1000);
+    if (isProfilingSupported) {
+      idToRootMap.set(id, currentRootID);
 
-      pushOperation(TREE_OPERATION_UPDATE_TREE_BASE_DURATION);
-      pushOperation(id);
-      pushOperation(treeBaseDuration);
-
-      const { actualDuration } = fiber;
-      if (actualDuration != null) {
-        // If profiling is active, store durations for elements that were rendered during the commit.
-        // We should do this for all fibers on mount, regardless of their actual durations.
-        const metadata = ((currentCommitProfilingMetadata: any): CommitProfilingData);
-        metadata.actualDurations.push(id, actualDuration);
-        metadata.maxActualDuration = Math.max(
-          metadata.maxActualDuration,
-          actualDuration
-        );
-      }
+      recordProfilingDurations(fiber);
     }
   }
 
@@ -1073,7 +1052,7 @@ export function attach(
     }
   }
 
-  function recordTreeDuration(fiber: Fiber) {
+  function recordProfilingDurations(fiber: Fiber) {
     const id = getFiberID(getPrimaryFiber(fiber));
     const { actualDuration, treeBaseDuration } = fiber;
 
@@ -1083,8 +1062,8 @@ export function attach(
       const { alternate } = fiber;
 
       if (
-        treeBaseDuration !==
-        (alternate ? alternate.treeBaseDuration : undefined)
+        alternate == null ||
+        treeBaseDuration !== alternate.treeBaseDuration
       ) {
         // Tree base duration updates are included in the operations typed array.
         // So we have to convert them from milliseconds to microseconds so we can send them as ints.
@@ -1092,18 +1071,31 @@ export function attach(
           (fiber.treeBaseDuration || 0) * 1000
         );
         pushOperation(TREE_OPERATION_UPDATE_TREE_BASE_DURATION);
-        pushOperation(getFiberID(getPrimaryFiber(fiber)));
+        pushOperation(id);
         pushOperation(treeBaseDuration);
       }
 
-      if (alternate ? didFiberRender(alternate, fiber) : true) {
+      if (alternate == null || didFiberRender(alternate, fiber)) {
         if (actualDuration != null) {
+          // The actual duration reported by React includes time spent working on children.
+          // This is useful information, but it's also useful to be able to exclude child durations.
+          // The frontend can't compute this, since the immediate children may have been filtered out.
+          // So we need to do this on the backend.
+          // Note that this calculated self duration is not the same thing as the base duration.
+          // The two are calculated differently (tree duration does not accumulate).
+          let selfDuration = actualDuration;
+          let child = fiber.child;
+          while (child !== null) {
+            selfDuration -= child.actualDuration || 0;
+            child = child.sibling;
+          }
+
           // If profiling is active, store durations for elements that were rendered during the commit.
           // Note that we should do this for any fiber we performed work on, regardless of its actualDuration value.
           // In some cases actualDuration might be 0 for fibers we worked on (particularly if we're using Date.now)
           // In other cases (e.g. Memo) actualDuration might be greater than 0 even if we "bailed out".
           const metadata = ((currentCommitProfilingMetadata: any): CommitProfilingData);
-          metadata.actualDurations.push(id, actualDuration);
+          metadata.durations.push(id, actualDuration, selfDuration);
           metadata.maxActualDuration = Math.max(
             metadata.maxActualDuration,
             actualDuration
@@ -1291,7 +1283,7 @@ export function attach(
     if (shouldIncludeInTree) {
       const isProfilingSupported = nextFiber.hasOwnProperty('treeBaseDuration');
       if (isProfilingSupported) {
-        recordTreeDuration(nextFiber);
+        recordProfilingDurations(nextFiber);
       }
     }
     if (shouldResetChildren) {
@@ -1353,7 +1345,7 @@ export function attach(
           // If profiling is active, store commit time and duration, and the current interactions.
           // The frontend may request this information after profiling has stopped.
           currentCommitProfilingMetadata = {
-            actualDurations: [],
+            durations: [],
             commitTime: performance.now() - profilingStartTime,
             interactions: Array.from(root.memoizedInteractions).map(
               (interaction: InteractionBackend) => ({
@@ -1402,7 +1394,7 @@ export function attach(
       // If profiling is active, store commit time and duration, and the current interactions.
       // The frontend may request this information after profiling has stopped.
       currentCommitProfilingMetadata = {
-        actualDurations: [],
+        durations: [],
         commitTime: performance.now() - profilingStartTime,
         interactions: Array.from(root.memoizedInteractions).map(
           (interaction: InteractionBackend) => ({
@@ -2060,8 +2052,8 @@ export function attach(
   }
 
   type CommitProfilingData = {|
-    actualDurations: Array<number>,
     commitTime: number,
+    durations: Array<number>,
     interactions: Array<InteractionBackend>,
     schedulers: Array<number> | null,
     maxActualDuration: number,
@@ -2088,13 +2080,13 @@ export function attach(
       const commitProfilingData = commitProfilingMetadata[commitIndex];
       if (commitProfilingData != null) {
         return {
-          commitIndex,
-          interactions: commitProfilingData.interactions,
-          actualDurations: commitProfilingData.actualDurations,
-          schedulers: commitProfilingData.schedulers,
           changeDescriptions: [
             ...commitProfilingData.changeDescriptions.entries(),
           ],
+          commitIndex,
+          durations: commitProfilingData.durations,
+          interactions: commitProfilingData.interactions,
+          schedulers: commitProfilingData.schedulers,
           rootID,
         };
       }
@@ -2105,12 +2097,12 @@ export function attach(
     );
 
     return {
-      commitIndex,
-      interactions: [],
-      actualDurations: [],
-      schedulers: [],
-      rootID,
       changeDescriptions: [],
+      commitIndex,
+      durations: [],
+      interactions: [],
+      rootID,
+      schedulers: [],
     };
   }
 
@@ -2123,10 +2115,10 @@ export function attach(
     );
     if (commitProfilingMetadata != null) {
       const commitDurations = [];
-      commitProfilingMetadata.forEach(({ actualDurations }, commitIndex) => {
-        for (let i = 0; i < actualDurations.length; i += 2) {
-          if (actualDurations[i] === fiberID) {
-            commitDurations.push(commitIndex, actualDurations[i + 1]);
+      commitProfilingMetadata.forEach(({ durations }, commitIndex) => {
+        for (let i = 0; i < durations.length; i += 3) {
+          if (durations[i] === fiberID) {
+            commitDurations.push(commitIndex, durations[i + 2]);
             break;
           }
         }
