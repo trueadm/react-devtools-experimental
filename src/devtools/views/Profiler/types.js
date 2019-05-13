@@ -27,12 +27,20 @@ export type InteractionWithCommitsFrontend = {|
 
 export type InteractionsFrontend = Array<InteractionWithCommitsFrontend>;
 
+// TODO (supenders) Is it important to handle context?
+export type ChangeDescription = {|
+  didHooksChange: boolean,
+  props: Array<string>,
+  state: Array<string>,
+|};
+
 export type CommitDetailsFrontend = {|
   rootID: number,
   commitIndex: number,
   actualDurations: Map<number, number>,
   interactions: Array<InteractionFrontend>,
-  schedulers: Set<number>,
+  schedulers: Set<number> | null,
+  changeDescriptions: Map<number, ChangeDescription>,
 |};
 
 export type FiberCommitsFrontend = {|

@@ -121,11 +121,19 @@ export type InteractionBackend = {|
   timestamp: number,
 |};
 
+// TODO (supenders) Is it important to handle context?
+export type ChangeDescription = {|
+  didHooksChange: boolean,
+  props: Array<string>,
+  state: Array<string>,
+|};
+
 export type CommitDetailsBackend = {|
   actualDurations: Array<number>,
+  changeDescriptions: Array<[number, ChangeDescription]>,
   commitIndex: number,
   interactions: Array<InteractionBackend>,
-  schedulers: Array<number>,
+  schedulers: Array<number> | null,
   rootID: number,
 |};
 

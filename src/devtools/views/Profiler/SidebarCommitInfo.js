@@ -165,20 +165,22 @@ function Schedulers({
   });
 
   const children = [];
-  for (let id of commitDetails.schedulers) {
-    const node = commitTree.nodes.get(id);
-    if (node != null) {
-      const { displayName, key } = node;
+  if (commitDetails.schedulers !== null) {
+    for (let id of commitDetails.schedulers) {
+      const node = commitTree.nodes.get(id);
+      if (node != null) {
+        const { displayName, key } = node;
 
-      children.push(
-        <button
-          key={id}
-          className={styles.ScheduledBy}
-          onClick={() => selectFiber(id, displayName)}
-        >
-          {displayName} {key ? `key="${key}"` : ''}
-        </button>
-      );
+        children.push(
+          <button
+            key={id}
+            className={styles.ScheduledBy}
+            onClick={() => selectFiber(id, displayName)}
+          >
+            {displayName} {key ? `key="${key}"` : ''}
+          </button>
+        );
+      }
     }
   }
   return children;
