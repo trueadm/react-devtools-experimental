@@ -94,7 +94,7 @@ export default function SidebarCommitInfo(_: Props) {
             </span>
           </li>
           <li className={styles.ListItem}>
-            <label className={styles.Label}>Scheduled by</label>:
+            <label className={styles.Label}>What caused this render</label>?
             <Schedulers
               commitDetails={commitDetails}
               commitIndex={selectedCommitIndex}

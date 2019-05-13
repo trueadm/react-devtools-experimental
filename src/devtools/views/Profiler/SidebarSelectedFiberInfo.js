@@ -115,14 +115,14 @@ function WhatChanged({
   if (changeDescription.didHooksChange) {
     changes.push(
       <div key="hooks" className={styles.WhatChangedItem}>
-        Hooks
+        • Hooks
       </div>
     );
   }
   if (changeDescription.props.length !== 0) {
     changes.push(
       <div key="props" className={styles.WhatChangedItem}>
-        Props
+        • Props
         {changeDescription.props.map(key => (
           <span key={key} className={styles.WhatChangedKey}>
             {key}
@@ -134,7 +134,7 @@ function WhatChanged({
   if (changeDescription.state.length !== 0) {
     changes.push(
       <div key="state" className={styles.WhatChangedItem}>
-        State
+        • State
         {changeDescription.state.map(key => (
           <span key={key} className={styles.WhatChangedKey}>
             {key}
