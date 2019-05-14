@@ -131,7 +131,7 @@ export type ChangeDescription = {|
 export type CommitDetailsBackend = {|
   changeDescriptions: Array<[number, ChangeDescription]>,
   commitIndex: number,
-  // Tuple of id, actual duration, and (computed) self duration
+  // An interleaved array: fiberID at [i], actualDuration at [i + 1], computed selfDuration at [i + 2].
   durations: Array<number>,
   interactions: Array<InteractionBackend>,
   rootID: number,
@@ -157,9 +157,17 @@ export type InteractionsBackend = {|
 export type ProfilingSummaryBackend = {|
   commitDurations: Array<number>,
   commitTimes: Array<number>,
+  // An interleaved array: fiberID at [i], initialTreeBaseDuration at [i + 1].
   initialTreeBaseDurations: Array<number>,
   interactionCount: number,
   rootID: number,
+|};
+
+export type ExportedProfilingDataFromRenderer = {|
+  version: 4,
+  profilingSummary: ProfilingSummaryBackend,
+  commitDetails: Array<CommitDetailsBackend>,
+  interactions: InteractionsBackend,
 |};
 
 export type PathFrame = {|
@@ -189,7 +197,9 @@ export type RendererInterface = {
   getFiberCommits: (rootID: number, fiberID: number) => FiberCommitsBackend,
   getInteractions: (rootID: number) => InteractionsBackend,
   getOwnersList: (id: number) => Array<Owner> | null,
-  getProfilingDataForDownload: (rootID: number) => Object,
+  getExportedProfilingData: (
+    rootID: number
+  ) => ExportedProfilingDataFromRenderer,
   getProfilingSummary: (rootID: number) => ProfilingSummaryBackend,
   getPathForElement: (id: number) => Array<PathFrame> | null,
   handleCommitFiberRoot: (fiber: Object) => void,

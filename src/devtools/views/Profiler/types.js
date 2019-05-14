@@ -1,5 +1,12 @@
 // @flow
 
+import type { ElementType } from 'src/types';
+import type {
+  CommitDetailsBackend,
+  InteractionsBackend,
+  ProfilingSummaryBackend,
+} from 'src/backend/types';
+
 export type CommitTreeNodeFrontend = {|
   id: number,
   children: Array<number>,
@@ -7,6 +14,7 @@ export type CommitTreeNodeFrontend = {|
   key: number | string | null,
   parentID: number,
   treeBaseDuration: number,
+  type: ElementType,
 |};
 
 export type CommitTreeFrontend = {|
@@ -25,7 +33,10 @@ export type InteractionWithCommitsFrontend = {|
   commits: Array<number>,
 |};
 
-export type InteractionsFrontend = Array<InteractionWithCommitsFrontend>;
+export type InteractionsFrontend = {|
+  interactions: Array<InteractionWithCommitsFrontend>,
+  rootID: number,
+|};
 
 // TODO (supenders) Is it important to handle context?
 export type ChangeDescription = {|
@@ -35,13 +46,13 @@ export type ChangeDescription = {|
 |};
 
 export type CommitDetailsFrontend = {|
-  rootID: number,
-  commitIndex: number,
   actualDurations: Map<number, number>,
-  selfDurations: Map<number, number>,
-  interactions: Array<InteractionFrontend>,
-  schedulers: Set<number> | null,
   changeDescriptions: Map<number, ChangeDescription>,
+  commitIndex: number,
+  interactions: Array<InteractionFrontend>,
+  rootID: number,
+  schedulers: Set<number> | null,
+  selfDurations: Map<number, number>,
 |};
 
 export type FiberCommitsFrontend = {|
@@ -70,13 +81,38 @@ export type ProfilingSnapshotNode = {|
   children: Array<number>,
   displayName: string | null,
   key: number | string | null,
+  type: ElementType,
 |};
 
 export type ImportedProfilingData = {|
-  version: number,
+  version: 4,
   profilingOperations: Map<number, Array<Uint32Array>>,
   profilingSnapshots: Map<number, Map<number, ProfilingSnapshotNode>>,
-  commitDetails: CommitDetailsFrontend,
+  commitDetails: Array<CommitDetailsFrontend>,
   interactions: InteractionsFrontend,
   profilingSummary: ProfilingSummaryFrontend,
+|};
+
+export type SerializableProfilingDataOperationsByRootID = Array<
+  [number, Array<Array<number>>]
+>;
+export type SerializableProfilingDataSnapshotsByRootID = Array<
+  [number, Array<[number, ProfilingSnapshotNode]>]
+>;
+
+export type ExportedProfilingSummaryFromFrontend = {|
+  version: 4,
+  profilingOperationsByRootID: SerializableProfilingDataOperationsByRootID,
+  profilingSnapshotsByRootID: SerializableProfilingDataSnapshotsByRootID,
+  rendererID: number,
+  rootID: number,
+|};
+
+export type ExportedProfilingData = {|
+  version: 4,
+  profilingOperationsByRootID: SerializableProfilingDataOperationsByRootID,
+  profilingSnapshotsByRootID: SerializableProfilingDataSnapshotsByRootID,
+  commitDetails: Array<CommitDetailsBackend>,
+  interactions: InteractionsBackend,
+  profilingSummary: ProfilingSummaryBackend,
 |};
