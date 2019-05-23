@@ -472,6 +472,9 @@ export default class Agent extends EventEmitter {
     window.addEventListener('click', this._onClick, true);
     window.addEventListener('mousedown', this._onMouseDown, true);
     window.addEventListener('mouseup', this._onMouseUp, true);
+    window.addEventListener('mouseover', this._onMouseOver, true);
+    window.addEventListener('mouseenter', this._onMouseEnter, true);
+    window.addEventListener('pointerenter', this._onPointerEnter, true);
     window.addEventListener('pointerover', this._onPointerOver, true);
     window.addEventListener('pointerdown', this._onPointerDown, true);
     window.addEventListener('pointerup', this._onPointerUp, true);
@@ -494,6 +497,9 @@ export default class Agent extends EventEmitter {
     window.removeEventListener('click', this._onClick, true);
     window.removeEventListener('mousedown', this._onMouseDown, true);
     window.removeEventListener('mouseup', this._onMouseUp, true);
+    window.removeEventListener('mouseover', this._onMouseOver, true);
+    window.removeEventListener('mouseenter', this._onMouseEnter, true);
+    window.removeEventListener('pointerenter', this._onPointerEnter, true);
     window.removeEventListener('pointerover', this._onPointerOver, true);
     window.removeEventListener('pointerdown', this._onPointerDown, true);
     window.removeEventListener('pointerup', this._onPointerUp, true);
@@ -611,6 +617,21 @@ export default class Agent extends EventEmitter {
   };
 
   _onPointerUp = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  _onPointerEnter = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  _onMouseOver = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  _onMouseEnter = (event: MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
   };
